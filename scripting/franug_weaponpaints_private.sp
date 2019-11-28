@@ -24,7 +24,7 @@
 #include <multicolors>
 #include <givenameditem>
 
-#define IDAYS 26
+//#define IDAYS 26
 
 #undef REQUIRE_PLUGIN
 #include <franug_stattrak>
@@ -37,7 +37,7 @@ new clientlang[MAXPLAYERS+1];
 
 //bool checked[MAXPLAYERS + 1];
 
-#define MAX_PAINTS 800
+#define MAX_PAINTS 950
 #define MAX_LANGUAGES 40
 #define MAX_TYPES 80
 
@@ -83,6 +83,9 @@ new bool:g_rmenu;
 new Handle:cvar_onlyadmin;
 new bool:onlyadmin;
 
+new Handle:cvar_inactivedays;
+new g_iInactivedays;
+
 new String:s_arma[MAXPLAYERS+1][64];
 new s_sele[MAXPLAYERS+1];
 
@@ -91,7 +94,7 @@ new ismysql;
 new Handle:array_paints[MAX_LANGUAGES];
 new Handle:array_armas;
 
-#define DATA "7.5"
+#define DATA "7.5.2"
 
 //new String:base[64] = "weaponpaints";
 
@@ -145,18 +148,22 @@ public OnPluginStart()
 	cvar_rtimer = CreateConVar("sm_weaponpaints_roundtimer", "-1.0", "Time in seconds roundstart for can use the commands for change the paints. -1.0 = always can use the command");
 	cvar_rmenu = CreateConVar("sm_weaponpaints_rmenu", "1", "Re-open the menu when you select a option. 1 = enabled, 0 = disabled.");
 	cvar_onlyadmin = CreateConVar("sm_weaponpaints_onlyadmin", "0", "This feature is only for admins. 1 = enabled, 0 = disabled.");
+	cvar_inactivedays = CreateConVar("sm_weaponspaints_inactivedays", "26", " Number of days before a player (SteamID) is marked as inactive and data is deleted. (-1 will disable all deleting not recommended for large servers.)");
 	
 	g_c4 = GetConVarBool(cvar_c4);
 	g_saytimer = GetConVarInt(cvar_saytimer);
 	g_rtimer = GetConVarInt(cvar_rtimer);
 	g_rmenu = GetConVarBool(cvar_rmenu);
 	onlyadmin = GetConVarBool(cvar_onlyadmin);
+	g_iInactivedays = GetConVarInt(cvar_inactivedays);
+	
 	
 	HookConVarChange(cvar_c4, OnConVarChanged);
 	HookConVarChange(cvar_saytimer, OnConVarChanged);
 	HookConVarChange(cvar_rtimer, OnConVarChanged);
 	HookConVarChange(cvar_rmenu, OnConVarChanged);
 	HookConVarChange(cvar_onlyadmin, OnConVarChanged);
+	HookConVarChange(cvar_inactivedays, OnConVarChanged);
 	
 	
 	new String:Items[64];
@@ -1546,25 +1553,28 @@ Nuevo(client)
 
 public PruneDatabase()
 {
-	if (db == INVALID_HANDLE)
+	if (g_iInactivedays != -1)
 	{
-		LogToFileEx(g_sCmdLogPath, "Prune Database: No connection");
-		ComprobarDB();
-		return;
+		if (db == INVALID_HANDLE)
+		{
+			LogToFileEx(g_sCmdLogPath, "Prune Database: No connection");
+			ComprobarDB();
+			return;
+		}
+
+		new maxlastaccuse;
+		maxlastaccuse = GetTime() - (g_iInactivedays * 86400);
+
+		decl String:buffer[1024];
+
+		if (ismysql == 1)
+			Format(buffer, sizeof(buffer), "DELETE FROM `weaponpaints_v71` WHERE `last_accountuse`<'%d' AND `last_accountuse`>'0';", maxlastaccuse);
+		else
+			Format(buffer, sizeof(buffer), "DELETE FROM weaponpaints_v71 WHERE last_accountuse<'%d' AND last_accountuse>'0';", maxlastaccuse);
+
+		LogToFileEx(g_sCmdLogPath, "Query %s", buffer);
+		SQL_TQuery(db, tbasicoP, buffer);
 	}
-
-	new maxlastaccuse;
-	maxlastaccuse = GetTime() - (IDAYS * 86400);
-
-	decl String:buffer[1024];
-
-	if (ismysql == 1)
-		Format(buffer, sizeof(buffer), "DELETE FROM `weaponpaints_v71` WHERE `last_accountuse`<'%d' AND `last_accountuse`>'0';", maxlastaccuse);
-	else
-		Format(buffer, sizeof(buffer), "DELETE FROM weaponpaints_v71 WHERE last_accountuse<'%d' AND last_accountuse>'0';", maxlastaccuse);
-
-	LogToFileEx(g_sCmdLogPath, "Query %s", buffer);
-	SQL_TQuery(db, tbasicoP, buffer);
 }
 
 public tbasico(Handle:owner, Handle:hndl, const String:error[], any:data)
