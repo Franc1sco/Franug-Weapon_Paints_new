@@ -18,7 +18,7 @@ sm_weaponpaints_roundtimer "-1.0" // Time in seconds roundstart for can use the 
 sm_weaponpaints_rmenu "1" // Re-open the menu when you select a option. 1 = enabled, 0 = disabled.
 sm_weaponpaints_onlyadmin "0" // This feature is only for admins. 1 = enabled, 0 = disabled. (Use the value 1 and try to keep this plugin secret for the normal users because they can report it)
 sm_weaponpaints_zombiesv "1" // Enable this for prevent crashes in zombie and 1v1 servers for knifes. 1 = enabled, 0 = disabled. (Use the value 1 if you use my knife plugin)
-"sm_weaponspaints_inactivedays" "26" // Number of days before a player (SteamID) is marked as inactive and data is deleted. (-1 will disable all deleting, not recommended for large servers.
+sm_weaponspaints_inactivedays "26" // Number of days before a player (SteamID) is marked as inactive and data is deleted. (-1 will disable all deleting, not recommended for large servers.
 ```
 
 ### Commands
